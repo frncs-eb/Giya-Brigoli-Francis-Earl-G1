@@ -13,8 +13,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+import environ
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -72,15 +77,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Giya.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database: use Supabase PostgreSQL when DATABASE_URL is configured, otherwise
+# keep SQLite available for a fresh local setup and automated tests.
+DATABASE_URL = env("DATABASE_URL", default="").strip()
+if DATABASE_URL:
+    DATABASES = {"default": env.db("DATABASE_URL")}
+    DATABASES["default"].setdefault("OPTIONS", {}).setdefault("sslmode", "require")
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
 
 # Password validation
