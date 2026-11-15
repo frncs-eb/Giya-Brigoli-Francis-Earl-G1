@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard | Giya{% endblock %}
+
+{% block content %}
+<main>
+  <h1>Admin Dashboard</h1>
+  <section class="dashboard-grid" aria-label="User summary">
+    <div class="summary-card">Total users<strong>{{ total_users }}</strong></div>
+    <div class="summary-card">Active users<strong>{{ active_users }}</strong></div>
+    <div class="summary-card">Inactive users<strong>{{ inactive_users }}</strong></div>
+    <div class="summary-card">Admins<strong>{{ admin_count }}</strong></div>
+    <div class="summary-card">Users<strong>{{ user_count }}</strong></div>
+  </section>
+
+  <section class="panel">
+    <h2>Recent users</h2>
+    <table>
+      <thead><tr><th>Username</th><th>Role</th><th>Date joined</th></tr></thead>
+      <tbody>
+        {% for account in recent_users %}
+          <tr>
+            <td>{{ account.username }}</td>
+            <td>{% if account.is_staff %}Admin{% else %}User{% endif %}</td>
+            <td>{{ account.date_joined|date:"M j, Y" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3">No users yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Quick actions</h2>
+    <div class="actions">
+      <a href="{% url 'admin:auth_user_changelist' %}">Manage Users</a>
+      <a href="{% url 'admin:index' %}">Django Admin</a>
+    </div>
+  </section>
+</main>
+{% endblock %}
