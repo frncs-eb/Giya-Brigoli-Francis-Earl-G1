@@ -29,10 +29,10 @@ The charter excludes advanced financial and banking services, as well as clinica
 
 ```text
 Giya/                 Django project configuration and root URL routes
-accounts/             Account registration, authentication routes, and tests
+accounts/             Account registration, authentication, profile editing, and tests
 dashboard/            Protected dashboard and tests
 templates/
-  accounts/           Login and registration pages
+  accounts/           Login, registration, and profile pages
   dashboard/          Dashboard page
   base.html            Shared page layout and navigation
 .env.example          Template for local environment configuration
@@ -106,6 +106,7 @@ Run these commands in **PowerShell** from the project directory—the folder tha
 
    - `/register/` to create an account
    - `/login/` to sign in
+   - `/profile/` to view and update your username, name, and email (requires sign-in)
    - `/dashboard/` to open the dashboard (requires sign-in)
    - `/admin/` for the Django admin site
 

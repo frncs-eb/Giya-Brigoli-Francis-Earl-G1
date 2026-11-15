@@ -7,6 +7,7 @@
   <section class="card wide">
     <h1>Welcome to Giya, {{ user.username }}!</h1>
     <p>You’re signed in. Your dashboard is ready.</p>
+    <p><a href="{% url 'accounts:profile' %}">View or update your profile</a></p>
   </section>
 </main>
 {% endblock %}
