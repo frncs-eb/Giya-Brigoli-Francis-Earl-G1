@@ -30,6 +30,16 @@
     .messages li { padding: .85rem 1rem; border-radius: 6px; background: #e4f3e9; color: #145638; }
     .profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1rem; }
     .profile-fields p { margin: 0; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .summary-card, .panel { padding: 1.25rem; background: #fff; border: 1px solid #dfe9e2; border-radius: 12px; }
+    .summary-card strong { display: block; margin-top: .5rem; font-size: 1.75rem; }
+    .panel { margin-top: 1.5rem; }
+    .panel h2 { margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .75rem; text-align: left; border-bottom: 1px solid #dfe9e2; }
+    .actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .actions a { display: inline-block; padding: .75rem 1rem; background: #176b4a; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 700; }
+    .placeholder { padding: 1.5rem; border: 2px dashed #b9c9bf; border-radius: 8px; text-align: center; }
     @media (max-width: 560px) { .profile-fields { grid-template-columns: 1fr; } }
     @media (max-width: 480px) { header { align-items: flex-start; gap: 1rem; } nav { flex-wrap: wrap; justify-content: flex-end; } .card { padding: 1.4rem; } }
   </style>
@@ -40,6 +50,10 @@
     <nav>
       {% if user.is_authenticated %}
         <a href="{% url 'accounts:profile' %}">Profile</a>
+        {% if user.is_staff %}
+          <a href="{% url 'admin:auth_user_changelist' %}">Manage Users</a>
+          <a href="{% url 'admin:index' %}">Django Admin</a>
+        {% endif %}
         <form method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}
           <button type="submit">Log out</button>

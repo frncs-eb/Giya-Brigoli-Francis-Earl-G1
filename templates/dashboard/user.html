@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Giya{% endblock %}
+
+{% block content %}
+<main>
+  <section class="card wide">
+    <h1>Welcome, {% firstof user.get_full_name user.username %}!</h1>
+    <div class="profile-fields">
+      <p><strong>Name</strong><br>{% firstof user.get_full_name user.username %}</p>
+      <p><strong>Role</strong><br>User</p>
+      <p><strong>Email</strong><br>{% if user.email %}{{ user.email }}{% else %}<span class="muted">Not provided</span>{% endif %}</p>
+      <p><strong>Date joined</strong><br>{{ user.date_joined|date:"M j, Y" }}</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Your dashboard</h2>
+    <div class="placeholder">Your content will appear here</div>
+  </section>
+</main>
+{% endblock %}

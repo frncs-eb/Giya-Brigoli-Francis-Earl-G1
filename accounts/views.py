@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 
 
@@ -20,9 +21,15 @@ def register(request):
 
     form = UserCreationForm(request.POST if request.method == 'POST' else None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        login(request, user)
-        return redirect('dashboard:home')
+        try:
+            with transaction.atomic():
+                user = form.save()
+        except IntegrityError:
+            # A duplicate can still be created between form validation and save.
+            form.add_error('username', 'An account with this username already exists.')
+        else:
+            login(request, user)
+            return redirect('dashboard:home')
 
     return render(request, 'accounts/register.html', {'form': form})
 
