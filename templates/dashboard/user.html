@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load budget_tags %}
 
 {% block title %}Dashboard | Giya{% endblock %}
 
@@ -15,8 +16,94 @@
   </section>
 
   <section class="panel">
-    <h2>Your dashboard</h2>
-    <div class="placeholder">Your content will appear here</div>
+    <div class="budget-head">
+      <div>
+        <h2>Your spending overview</h2>
+        <p class="muted">{{ today|date:"l, F j, Y" }}</p>
+      </div>
+      <a class="button-link" href="{% url 'budget:home' %}">Open Budget Tracker</a>
+    </div>
+
+    <div class="insight-grid">
+      <article class="insight-card">
+        <h3>Spent today</h3>
+        <span class="insight-value">{{ today_spent|money }}</span>
+      </article>
+      <article class="insight-card">
+        <h3>This month</h3>
+        <span class="insight-value">{{ month_spent|money }}</span>
+        <span class="muted">Month to date</span>
+      </article>
+      <article class="insight-card">
+        <div class="budget-head">
+          <h3>Active budget</h3>
+          <a href="{% url 'budget:home' %}">View</a>
+        </div>
+        {% if budget_summary %}
+          <p>Remaining<span class="insight-value">{{ budget_summary.allowance.remaining|money }}</span></p>
+          <p>Spent {{ budget_summary.allowance.spent_total|money }} of {{ budget_summary.allowance.amount|money }}</p>
+          <div class="progress{% if budget_summary.allowance.remaining < 0 %} over{% endif %}" role="progressbar" aria-label="Active budget used" aria-valuenow="{{ budget_summary.progress_percent|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+            <span style="width: {{ budget_summary.progress_percent }}%"></span>
+          </div>
+          {% if budget_summary.allowance.remaining < 0 %}<p class="over-budget">Over budget</p>{% endif %}
+        {% else %}
+          <p>No active allowance</p>
+          <a href="{% url 'budget:allowance_create' %}">Create an allowance</a>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Where your money goes</h2>
+    {% for category in category_spending %}
+      <div class="category-row">
+        <div class="budget-head">
+          <strong>{{ category.category__name }}</strong>
+          <span>{{ category.total|money }} · {{ category.percent|floatformat:1 }}%</span>
+        </div>
+        <div class="progress" role="progressbar" aria-label="{{ category.category__name }} share of monthly spending" aria-valuenow="{{ category.percent|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+          <span style="width: {{ category.percent }}%"></span>
+        </div>
+      </div>
+    {% empty %}
+      <p class="muted">Your category breakdown will appear after you record expenses this month.</p>
+    {% endfor %}
+    <p class="muted">Category totals are based on expenses recorded this month to date.</p>
+  </section>
+
+  <section class="panel">
+    <div class="budget-head">
+      <h2>Recent expenses</h2>
+      <a href="{% url 'budget:home' %}">View all budgets</a>
+    </div>
+    <div style="overflow-x: auto">
+      <table>
+        <thead><tr><th>Date</th><th>Item</th><th>Category</th><th>Amount</th><th>Budget</th></tr></thead>
+        <tbody>
+          {% for expense in recent_expenses %}
+            <tr>
+              <td>{{ expense.expense_date|date:"M j, Y" }}</td>
+              <td>{{ expense.item_name }}</td>
+              <td>{{ expense.category.name }}</td>
+              <td>{{ expense.amount|money }}</td>
+              <td><a href="{% url 'budget:allowance_detail' expense.allowance_id %}">{{ expense.allowance.get_period_type_display }}</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">No expenses recorded yet. <a href="{% url 'budget:home' %}">Add expenses in your budget</a>.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>More tools coming soon</h2>
+    <div class="future-grid">
+      <article class="future-card"><strong>Savings goals</strong><p class="muted">Plan and track what you are saving toward.</p></article>
+      <article class="future-card"><strong>Spending reports</strong><p class="muted">Explore your trends over time.</p></article>
+      <article class="future-card"><strong>Recurring bills</strong><p class="muted">Keep upcoming regular expenses in one place.</p></article>
+    </div>
   </section>
 </main>
 {% endblock %}

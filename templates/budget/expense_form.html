@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Giya{% endblock %}
+
+{% block content %}
+<main>
+  <section class="card">
+    <h1>{{ title }}</h1>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% if return_allowance %}<input type="hidden" name="return_allowance" value="{{ return_allowance }}">{% endif %}
+      {% for field in form %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {{ field.errors }}
+      {% endfor %}
+      <button class="submit" type="submit">Save expense</button>
+    </form>
+    <p><a href="{% if expense %}{% url 'budget:allowance_detail' expense.allowance_id %}{% elif return_allowance %}{% url 'budget:allowance_detail' return_allowance %}{% else %}{% url 'budget:home' %}{% endif %}">Cancel</a></p>
+  </section>
+</main>
+{% endblock %}
