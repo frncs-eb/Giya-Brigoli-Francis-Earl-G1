@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load budget_tags %}
+
+{% block title %}Delete allowance | Giya{% endblock %}
+
+{% block content %}
+<main>
+  <section class="card">
+    <h1>Delete allowance?</h1>
+    <p>This will permanently delete the {{ allowance.get_period_type_display|lower }} allowance and its expenses.</p>
+    <p><strong>{{ allowance.amount|money }}</strong> · {{ allowance.start_date|date:"M j, Y" }} – {{ allowance.end_date|date:"M j, Y" }}</p>
+    <form method="post">
+      {% csrf_token %}
+      <button class="submit" type="submit">Confirm delete</button>
+    </form>
+    <p><a href="{% url 'budget:allowance_detail' allowance.pk %}">Cancel</a></p>
+  </section>
+</main>
+{% endblock %}
