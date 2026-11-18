@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load budget_tags %}
+
+{% block title %}Budget | Giya{% endblock %}
+
+{% block content %}
+<main>
+  <div class="budget-head">
+    <h1>Your budget allowances</h1>
+    <a class="button-link" href="{% url 'budget:allowance_create' %}">Add allowance</a>
+  </div>
+  <section class="budget-list">
+    {% for summary in allowance_summaries %}
+      <article class="budget-item{% if summary.active %} active{% endif %}">
+        <div class="budget-head">
+          <h2><a href="{% url 'budget:allowance_detail' summary.allowance.pk %}">{{ summary.allowance.get_period_type_display }} allowance</a></h2>
+          {% if summary.active %}<strong>Active today</strong>{% endif %}
+        </div>
+        <div class="budget-stats">
+          <p>Allowance<strong>{{ summary.allowance.amount|money }}</strong></p>
+          <p>Spent<strong>{{ summary.allowance.spent_total|money }}</strong></p>
+          <p>Remaining<strong>{{ summary.allowance.remaining|money }}</strong></p>
+          <p>Dates<strong>{{ summary.allowance.start_date|date:"M j, Y" }} – {{ summary.allowance.end_date|date:"M j, Y" }}</strong></p>
+        </div>
+        {% if summary.allowance.remaining < 0 %}<p class="over-budget">Over budget</p>{% endif %}
+        <div class="progress{% if summary.allowance.remaining < 0 %} over{% endif %}" role="progressbar" aria-label="Budget used" aria-valuenow="{{ summary.progress_percent|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+          <span style="width: {{ summary.progress_percent }}%"></span>
+        </div>
+        <p>{{ summary.used_percent|floatformat:1 }}% used</p>
+      </article>
+    {% empty %}
+      <div class="placeholder">You don't have any budget allowances yet.</div>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

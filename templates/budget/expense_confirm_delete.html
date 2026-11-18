@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load budget_tags %}
+
+{% block title %}Delete expense | Giya{% endblock %}
+
+{% block content %}
+<main>
+  <section class="card">
+    <h1>Delete expense?</h1>
+    <p>Delete <strong>{{ expense.item_name }}</strong> ({{ expense.amount|money }})?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button class="submit" type="submit">Confirm delete</button>
+    </form>
+    <p><a href="{% url 'budget:allowance_detail' expense.allowance_id %}">Cancel</a></p>
+  </section>
+</main>
+{% endblock %}
