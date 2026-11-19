@@ -3,24 +3,101 @@
 {% block title %}Create account | Giya{% endblock %}
 
 {% block content %}
-<main>
-  <section class="card">
-    <h1>Create your account</h1>
-    <p class="muted">Sign up to get started with Giya.</p>
+<style>
+  body { min-height: 100vh; display: flex; flex-direction: column; background: #fafafa; color: #171717; font-family: Arial, sans-serif; }
+  header { width: 100%; min-height: 72px; padding: 1.15rem max(2rem, calc((100% - 1160px) / 2)); background: #fff; border-bottom: 1px solid #e8e8e8; }
+  header .brand { color: #292929; font-size: 1.05rem; font-weight: 700; letter-spacing: -.02em; }
+  header nav { gap: 1.25rem; }
+  header nav a { color: #666; font-size: .86rem; text-decoration: none; transition: color .18s, background .18s; }
+  header nav a:hover { color: #292929; }
+  header nav a:last-child { padding: .58rem 1rem; border-radius: 6px; background: #333; color: #fff; }
+  header nav a:last-child:hover { background: #4a4a4a; }
+  main.auth-main { display: flex; flex: 1; align-items: center; justify-content: center; width: min(100% - 2rem, 640px); margin: 0 auto; padding: 2.25rem 0 1.5rem; }
+  .auth-card { width: min(100%, 520px); padding: 2rem 2.2rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; box-shadow: 0 3px 12px #00000009; }
+  .auth-card h1 { margin: 0; color: #292929; font-size: 1.55rem; font-weight: 700; letter-spacing: -.045em; text-align: center; }
+  .auth-intro { margin: .65rem 0 1.5rem; color: #737373; font-size: .84rem; line-height: 1.5; text-align: center; }
+  .auth-card form { margin: 0; }
+  .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  .auth-field { min-width: 0; }
+  .auth-card label { display: block; margin: .75rem 0 .35rem; color: #262626; font-size: .8rem; font-weight: 600; }
+  .auth-card input { display: block; width: 100%; min-height: 46px; padding: .7rem .85rem; border: 1px solid #dedede; border-radius: 5px; background: #fff; color: #292929; font-size: .86rem; }
+  .password-input { position: relative; }
+  .auth-card .password-input input { padding-right: 3rem; }
+  .show-password { position: absolute; top: 50%; right: .5rem; display: grid; width: 30px; height: 30px; place-items: center; padding: 0; transform: translateY(-50%); border-radius: 5px; background: transparent; color: #687483; }
+  .show-password:hover { background: #f2f4f3; }
+  .show-password svg { width: 17px; height: 17px; }
+  .auth-card input::placeholder { color: #9aa3af; }
+  .auth-card input:focus { outline: none; border-color: #777; box-shadow: 0 0 0 3px #0000000d; }
+  .auth-card .submit { min-height: 46px; margin-top: 1.1rem; border-radius: 5px; background: #333; color: #fff; font-size: .88rem; font-weight: 600; }
+  .auth-card .submit:hover { background: #4a4a4a; }
+  .auth-card .muted { margin: 1.1rem 0 0; color: #737373; font-size: .8rem; text-align: center; }
+  .auth-card .muted a { color: #333; text-decoration: underline; text-decoration-color: #bdbdbd; text-underline-offset: 3px; }
+  .auth-card .muted a:hover { text-decoration: underline; }
+  .auth-card .form-errors, .auth-card .errorlist { color: #a33c34; font-size: .8rem; }
+  .auth-card .errorlist { margin: .3rem 0 0; padding-left: 1.1rem; }
+  footer.auth-footer { padding: .8rem 1rem 1.1rem; color: #818b98; font-size: .72rem; text-align: center; }
+  @media (max-width: 480px) { header { padding: .7rem 1rem; } header nav { gap: .65rem; } main.auth-main { padding-top: 1.8rem; } .name-row { gap: .6rem; } }
+</style>
+<main class="auth-main">
+  <section class="auth-card">
+    <h1>Create your Giya account</h1>
+    <p class="auth-intro">A little more balance. A lot more focus.<br>Your student life, all in one place.</p>
     <form method="post">
       {% csrf_token %}
-      {% if form.non_field_errors %}
-        <div class="form-errors">{{ form.non_field_errors }}</div>
-      {% endif %}
-      {% for field in form %}
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}<small class="helptext">{{ field.help_text|safe }}</small>{% endif %}
-        {% if field.errors %}<div class="form-errors">{{ field.errors }}</div>{% endif %}
-      {% endfor %}
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="name-row">
+        <div class="auth-field">
+          <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}<div class="form-errors">{{ form.first_name.errors }}</div>{% endif %}
+        </div>
+        <div class="auth-field">
+          <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}<div class="form-errors">{{ form.last_name.errors }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="auth-field">
+        <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div class="form-errors">{{ form.email.errors }}</div>{% endif %}
+      </div>
+      <div class="auth-field">
+        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+        <div class="password-input">
+          {{ form.password }}
+          <button class="show-password" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="{{ form.password.id_for_label }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+          </button>
+        </div>
+        {% if form.password.errors %}<div class="form-errors">{{ form.password.errors }}</div>{% endif %}
+      </div>
+      <div class="auth-field">
+        <label for="{{ form.confirm_password.id_for_label }}">{{ form.confirm_password.label }}</label>
+        <div class="password-input">
+          {{ form.confirm_password }}
+          <button class="show-password" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="{{ form.confirm_password.id_for_label }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+          </button>
+        </div>
+        {% if form.confirm_password.errors %}<div class="form-errors">{{ form.confirm_password.errors }}</div>{% endif %}
+      </div>
       <button class="submit" type="submit">Create account</button>
     </form>
-    <p class="muted">Already registered? <a href="{% url 'accounts:login' %}">Log in</a></p>
+    <p class="muted">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
   </section>
 </main>
+<footer class="auth-footer">Integrated Management for Academic and Clincal Excellence.</footer>
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const input = document.getElementById(button.dataset.passwordToggle);
+      if (!input) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      button.setAttribute('aria-pressed', String(show));
+      button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+  });
+</script>
 {% endblock %}
