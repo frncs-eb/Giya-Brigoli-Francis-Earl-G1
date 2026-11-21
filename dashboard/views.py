@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
@@ -9,6 +9,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from budget.models import BudgetAllowance, Expense
+from schedule.models import ClassSchedule
 
 
 def allowance_spending(queryset):
@@ -82,6 +83,15 @@ def home(request):
         'category',
         'allowance',
     ).order_by('-expense_date', '-created_at')[:5]
+    upcoming_classes = []
+    now = timezone.localtime()
+    for class_item in ClassSchedule.objects.filter(user=user):
+        days_ahead = (class_item.day_of_week - 1 - today.weekday()) % 7
+        occurrence = today + timedelta(days=days_ahead)
+        if occurrence == today and class_item.start_time <= now.time():
+            occurrence += timedelta(days=7)
+        upcoming_classes.append({'class_item': class_item, 'date': occurrence})
+    upcoming_classes.sort(key=lambda item: (item['date'], item['class_item'].start_time))
     return render(request, 'dashboard/user.html', {
         'budget_summary': budget_summary,
         'today': today,
@@ -89,4 +99,5 @@ def home(request):
         'month_spent': month_spent,
         'category_spending': category_spending,
         'recent_expenses': recent_expenses,
+        'upcoming_classes': upcoming_classes[:3],
     })
