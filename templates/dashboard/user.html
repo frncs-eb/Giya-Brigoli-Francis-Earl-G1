@@ -98,6 +98,24 @@
   </section>
 
   <section class="panel">
+    <div class="budget-head">
+      <div>
+        <h2>Upcoming classes</h2>
+        <p class="muted">A quick look at your next schedule items</p>
+      </div>
+      <a class="button-link" href="{% url 'schedule:calendar' %}">Open Schedule</a>
+    </div>
+    {% for entry in upcoming_classes %}
+      <div class="budget-head" style="padding:.65rem 0;border-bottom:1px solid #dfe9e2">
+        <strong>{{ entry.class_item.subject_name }}</strong>
+        <span>{{ entry.date|date:"D, M j" }} · {{ entry.class_item.start_time|time:"g:i A" }}{% if entry.class_item.room %} · {{ entry.class_item.room }}{% endif %}</span>
+      </div>
+    {% empty %}
+      <p class="muted">No classes yet. <a href="{% url 'schedule:calendar' %}">Add one to your schedule</a>.</p>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
     <h2>More tools coming soon</h2>
     <div class="future-grid">
       <article class="future-card"><strong>Savings goals</strong><p class="muted">Plan and track what you are saving toward.</p></article>
