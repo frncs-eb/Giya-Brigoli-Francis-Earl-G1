@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Clinical Log | Giya{% endblock %}
+{% block content %}
+<main>
+  <section class="card wide">
+    <h1>Clinical Log</h1>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<p class="form-errors">{{ error }}</p>{% endfor %}
+      {% endfor %}
+      <button class="submit">Save log</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Logged cases</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Hospital</th><th>Date</th><th>Time</th><th>Area</th><th>Case</th></tr></thead>
+        <tbody>
+          {% for log in logs %}
+            <tr><td>{{ log.hospital }}</td><td>{{ log.duty_date|date:"M j, Y" }}</td><td>{{ log.duty_time|time:"g:i A" }}</td><td>{{ log.get_area_display }}</td><td>{{ log.case_type }}</td></tr>
+          {% empty %}
+            <tr><td colspan="5">No clinical cases logged yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+{{ cases_by_area|json_script:"clinical-case-options" }}
+<script>
+  (function () {
+    var casesByArea = JSON.parse(document.getElementById('clinical-case-options').textContent);
+    var area = document.getElementById('id_area');
+    var caseSelect = document.getElementById('id_case_type');
+    area.addEventListener('change', function () {
+      caseSelect.replaceChildren(new Option('Choose a case', ''));
+      (casesByArea[area.value] || []).forEach(function (caseName) {
+        caseSelect.add(new Option(caseName, caseName));
+      });
+    });
+  }());
+</script>
+{% endblock %}
