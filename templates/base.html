@@ -78,6 +78,7 @@
       {% if user.is_authenticated %}
         <a href="{% url 'schedule:calendar' %}">Schedule</a>
         <a href="{% url 'budget:home' %}">Budget</a>
+        <a href="{% url 'clinical:home' %}">Clinical Log</a>
         <a href="{% url 'accounts:profile' %}">Profile</a>
         {% if user.is_staff %}
           <a href="{% url 'admin:auth_user_changelist' %}">Manage Users</a>

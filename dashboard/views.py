@@ -9,6 +9,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from budget.models import BudgetAllowance, Expense
+from clinical.models import ClinicalLog
 from schedule.models import ClassSchedule
 
 
@@ -92,6 +93,9 @@ def home(request):
             occurrence += timedelta(days=7)
         upcoming_classes.append({'class_item': class_item, 'date': occurrence})
     upcoming_classes.sort(key=lambda item: (item['date'], item['class_item'].start_time))
+    recent_clinical_logs = ClinicalLog.objects.filter(user=user).order_by(
+        '-duty_date', '-duty_time',
+    )[:3]
     return render(request, 'dashboard/user.html', {
         'budget_summary': budget_summary,
         'today': today,
@@ -100,4 +104,5 @@ def home(request):
         'category_spending': category_spending,
         'recent_expenses': recent_expenses,
         'upcoming_classes': upcoming_classes[:3],
+        'recent_clinical_logs': recent_clinical_logs,
     })
