@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'dashboard',
     'budget',
     'schedule',
+    'clinical',
 ]
 
 MIDDLEWARE = [
