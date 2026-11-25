@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'budget',
     'schedule',
     'clinical',
+    'tasks',
 ]
 
 MIDDLEWARE = [

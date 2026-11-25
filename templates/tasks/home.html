@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks | Giya{% endblock %}
+
+{% block content %}
+<style>
+  .tasks-page { width: min(100% - 2rem, 1180px); margin: 2rem auto 4rem; }
+  .tasks-heading, .tasks-toolbar, .task-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .tasks-heading p { margin-top: -.5rem; }
+  .tasks-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin: 1.25rem 0; }
+  .tasks-summary article { padding: 1rem; border: 1px solid #dfe9e2; border-radius: 10px; background: #fff; }
+  .tasks-summary strong { display: block; margin-top: .25rem; font-size: 1.5rem; }
+  .tasks-toolbar, .quick-add, .task-group { padding: 1rem; border: 1px solid #dfe9e2; border-radius: 10px; background: #fff; }
+  .tasks-toolbar { justify-content: flex-start; margin-bottom: .75rem; }
+  .tasks-toolbar form { display: flex; align-items: end; gap: .65rem; flex-wrap: wrap; width: 100%; }
+  .tasks-toolbar label, .quick-add label { margin: 0; font-size: .85rem; }
+  .tasks-toolbar input, .tasks-toolbar select, .quick-add input { min-width: 135px; padding: .55rem; }
+  .tasks-toolbar .search-field { flex: 1 1 180px; }
+  .view-switch { display: inline-flex; gap: .35rem; padding: .25rem; border-radius: 8px; background: #e9f1eb; }
+  .view-switch a { padding: .55rem .8rem; border-radius: 6px; text-decoration: none; font-weight: 700; }
+  .view-switch a.active { background: #176b4a; color: #fff; }
+  .group-toggle { display: flex; align-items: center; gap: .45rem; padding: .55rem 0; }
+  .group-toggle input { width: auto; min-width: 0; }
+  .quick-add { margin-bottom: 1rem; }
+  .quick-add-fields { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(170px, 1.4fr) minmax(190px, 1fr) auto; align-items: end; gap: .75rem; }
+  .quick-add-fields label { display: block; margin-bottom: .35rem; font-weight: 600; }
+  .quick-add-fields button { min-width: 90px; }
+  .form-errors { margin: .3rem 0 0; }
+  .task-table-wrap { overflow-x: auto; border: 1px solid #dfe9e2; border-radius: 10px; background: #fff; }
+  .task-table { min-width: 920px; }
+  .task-table th { background: #f7faf7; font-size: .85rem; }
+  .task-table td { vertical-align: middle; }
+  .task-table .activity-done { text-decoration: line-through; color: #718078; }
+  .task-course { display: inline-block; padding: .3rem .6rem; border-radius: 999px; background: hsl(var(--course-hue) 60% 90%); color: hsl(var(--course-hue) 35% 28%); font-size: .85rem; font-weight: 700; }
+  .status-select { min-width: 135px; padding: .45rem .55rem; border-radius: 999px; font-weight: 700; }
+  .status-select.status-not-started { background: #e8edf5; color: #364c6b; }
+  .status-select.status-in-progress { background: #fff1cd; color: #765400; }
+  .status-select.status-done { background: #dff2e6; color: #17603e; }
+  .deadline-overdue { color: #b42318; font-weight: 700; }
+  .deadline-soon { color: #9a6700; font-weight: 700; }
+  .deadline-done { color: #718078; }
+  .priority { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
+  .priority-dot { width: .6rem; height: .6rem; border-radius: 50%; background: #8a9a90; }
+  .priority-high .priority-dot { background: #d14343; }
+  .priority-medium .priority-dot { background: #d69e2e; }
+  .priority-low .priority-dot { background: #438a65; }
+  .task-actions { display: flex; align-items: center; gap: .55rem; white-space: nowrap; }
+  .task-actions a, .task-actions button { font-size: .85rem; }
+  .task-group { margin-bottom: 1rem; padding: 0; overflow: hidden; }
+  .task-group-heading { padding: .8rem 1rem; background: #f7faf7; }
+  .task-group-heading h2 { margin: 0; font-size: 1rem; }
+  .empty-state { padding: 2rem; border: 1px dashed #b9c9bf; border-radius: 10px; background: #fff; text-align: center; }
+  .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+  .board-column { min-height: 260px; padding: .75rem; border: 1px solid #dfe9e2; border-radius: 12px; background: #eaf1eb; }
+  .board-column[data-status="NOT_STARTED"] { background: #edf1f7; }
+  .board-column[data-status="IN_PROGRESS"] { background: #fff7e3; }
+  .board-column[data-status="DONE"] { background: #e7f4eb; }
+  .board-column h2 { margin: .2rem .2rem .75rem; font-size: 1rem; }
+  .board-cards { display: grid; gap: .65rem; min-height: 190px; }
+  .task-card { padding: .9rem; border: 1px solid #dfe9e2; border-radius: 9px; background: #fff; cursor: grab; }
+  .task-card:active { cursor: grabbing; }
+  .task-card h3 { margin: .6rem 0; font-size: 1rem; }
+  .task-card .activity-done { text-decoration: line-through; color: #718078; }
+  .task-card-meta, .task-card-actions { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+  .task-card-actions { justify-content: flex-start; margin-top: .75rem; }
+  .task-card-actions form { margin: 0; }
+  .task-card-actions button { padding: .4rem .55rem; font-size: .78rem; }
+  .task-card-actions a { font-size: .82rem; }
+  .board-column.drag-over { outline: 2px dashed #176b4a; outline-offset: -4px; }
+  @media (max-width: 760px) { .quick-add-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .board { grid-template-columns: 1fr; } .board-column { min-height: 180px; } }
+  @media (max-width: 480px) { .quick-add-fields { grid-template-columns: 1fr; } }
+</style>
+
+<main class="tasks-page">
+  <div class="tasks-heading">
+    <div><h1>Task Tracker</h1><p class="muted">Keep course activities and deadlines in one place.</p></div>
+    <div class="view-switch" aria-label="Task view">
+      <a class="{% if view == 'table' %}active{% endif %}" href="{{ table_url }}">Table</a>
+      <a class="{% if view == 'board' %}active{% endif %}" href="{{ board_url }}">Board</a>
+    </div>
+  </div>
+
+  <section class="tasks-summary" aria-label="Task summary">
+    <article>Total tasks<strong>{{ summary.total|default:0 }}</strong></article>
+    <article>Pending<strong>{{ summary.pending|default:0 }}</strong></article>
+    <article>Overdue<strong class="{% if summary.overdue %}over-budget{% endif %}">{{ summary.overdue|default:0 }}</strong></article>
+    <article>Due this week<strong>{{ summary.due_this_week|default:0 }}</strong></article>
+    <article>Completed<strong>{{ summary.completed|default:0 }}</strong></article>
+  </section>
+
+  <section class="tasks-toolbar">
+    <form method="get" action="{% url 'tasks:home' %}">
+      {% csrf_token %}
+      <input type="hidden" name="view" value="{{ view }}">
+      <div><label for="filter-course">Course</label><select id="filter-course" name="course"><option value="">All courses</option>{% for course in courses %}<option value="{{ course }}"{% if selected_course == course %} selected{% endif %}>{{ course }}</option>{% endfor %}</select></div>
+      <div><label for="filter-status">Status</label><select id="filter-status" name="status"><option value="">All statuses</option>{% for value,label in statuses %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div><label for="filter-priority">Priority</label><select id="filter-priority" name="priority"><option value="">All priorities</option>{% for value,label in priorities %}<option value="{{ value }}"{% if selected_priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="search-field"><label for="task-search">Search</label><input id="task-search" type="search" name="q" value="{{ search }}" placeholder="Activity or course"></div>
+      <div><label for="task-sort">Sort by</label><select id="task-sort" name="sort"><option value="deadline"{% if sort == 'deadline' %} selected{% endif %}>Deadline</option><option value="course"{% if sort == 'course' %} selected{% endif %}>Course</option><option value="status"{% if sort == 'status' %} selected{% endif %}>Status</option></select></div>
+      {% if view == "table" %}<label class="group-toggle"><input type="checkbox" name="group_by_course" value="1"{% if group_by_course %} checked{% endif %}> Group by course</label>{% endif %}
+      <button type="submit">Apply</button>
+    </form>
+  </section>
+
+  {% if view == "table" %}
+    <section class="quick-add">
+      <h2 style="margin-top:0">Quick add</h2>
+      <form method="post" action="{% url 'tasks:create' %}?{{ request.GET.urlencode }}">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ current_url }}">
+        <datalist id="course-suggestions">{% for course in course_suggestions %}<option value="{{ course }}">{% endfor %}</datalist>
+        <div class="quick-add-fields">
+          <div><label for="id_course">Course</label>{{ quick_form.course }}{% for error in quick_form.course.errors %}<p class="form-errors">{{ error }}</p>{% endfor %}</div>
+          <div><label for="id_title">Activity</label>{{ quick_form.title }}{% for error in quick_form.title.errors %}<p class="form-errors">{{ error }}</p>{% endfor %}</div>
+          <div><label for="id_due_date">Deadline</label>{{ quick_form.due_date }}{% for error in quick_form.due_date.errors %}<p class="form-errors">{{ error }}</p>{% endfor %}</div>
+          <button type="submit">Add</button>
+        </div>
+        {% if quick_form.non_field_errors %}<p class="form-errors">{{ quick_form.non_field_errors }}</p>{% endif %}
+      </form>
+    </section>
+
+    {% if not summary.total %}
+      <div class="empty-state"><h2>No tasks yet</h2><p class="muted">Add your first activity using the quick-add row.</p></div>
+    {% elif not tasks %}
+      <div class="empty-state"><h2>No tasks match these filters</h2><p class="muted">Try clearing a filter or changing your search.</p></div>
+    {% elif group_by_course %}
+      {% for group in grouped_tasks %}
+        <section class="task-group">
+          <div class="task-group-heading"><h2><span class="task-course" style="--course-hue:{{ group.hue }}">{{ group.course }}</span></h2><span class="muted">{{ group.count }} task{{ group.count|pluralize }}</span></div>
+          {% include "tasks/_table.html" with rows=group.tasks %}
+        </section>
+      {% endfor %}
+    {% else %}
+      {% include "tasks/_table.html" with rows=tasks %}
+    {% endif %}
+  {% else %}
+    {% if not summary.total %}
+      <div class="empty-state"><h2>No tasks yet</h2><p class="muted">Switch to Table to add your first activity.</p><a class="button-link" href="{{ table_url }}">Add a task</a></div>
+    {% elif not tasks %}
+      <div class="empty-state"><h2>No tasks match these filters</h2><p class="muted">Try clearing a filter or changing your search.</p></div>
+    {% else %}
+      <div class="board">
+        {% for status_value,status_label in status_columns %}
+          <section class="board-column" data-status="{{ status_value }}" data-status-url-template="">
+            <h2>{{ status_label }}</h2>
+            <div class="board-cards">
+              {% for task in tasks %}
+                {% if task.status == status_value %}
+                  <article class="task-card" draggable="true" data-task-id="{{ task.pk }}" data-status="{{ task.status }}" data-status-url="{% url 'tasks:set_status' task.pk %}">
+                    <div class="task-card-meta"><span class="task-course" style="--course-hue:{{ task.course_hue }}">{{ task.course }}</span><span class="priority priority-{{ task.priority|lower }}"><i class="priority-dot"></i>{{ task.get_priority_display }}</span></div>
+                    <h3 class="{% if task.status == 'DONE' %}activity-done{% endif %}">{{ task.title }}</h3>
+                    <p class="muted">{{ task.due_date|date:"M j, Y, g:i A" }}</p>
+                    <div class="task-card-actions">
+                      <a href="{% url 'tasks:edit' task.pk %}?next={{ current_url|urlencode }}">Edit</a>
+                      <a href="{% url 'tasks:delete_confirm' task.pk %}?next={{ current_url|urlencode }}">Delete</a>
+                      {% for target,label in status_columns %}{% if target != task.status %}<form method="post" action="{% url 'tasks:set_status' task.pk %}">{% csrf_token %}<input type="hidden" name="status" value="{{ target }}"><input type="hidden" name="next" value="{{ current_url }}"><button type="submit">Move to {{ label }}</button></form>{% endif %}{% endfor %}
+                    </div>
+                  </article>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+      <script>
+        (() => {
+          const cookie = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith("csrftoken="));
+          const csrfToken = cookie ? decodeURIComponent(cookie.slice("csrftoken=".length)) : "";
+          let draggedCard = null;
+          document.querySelectorAll(".task-card[draggable=true]").forEach((card) => {
+            card.addEventListener("dragstart", (event) => { draggedCard = card; event.dataTransfer.setData("text/plain", card.dataset.taskId); });
+            card.addEventListener("dragend", () => { draggedCard = null; document.querySelectorAll(".board-column").forEach((column) => column.classList.remove("drag-over")); });
+          });
+          document.querySelectorAll(".board-column").forEach((column) => {
+            column.addEventListener("dragover", (event) => { event.preventDefault(); column.classList.add("drag-over"); });
+            column.addEventListener("dragleave", (event) => { if (!column.contains(event.relatedTarget)) column.classList.remove("drag-over"); });
+            column.addEventListener("drop", async (event) => {
+              event.preventDefault(); column.classList.remove("drag-over");
+              const cardId = event.dataTransfer.getData("text/plain");
+              const card = draggedCard && draggedCard.dataset.taskId === cardId ? draggedCard : document.querySelector(`[data-task-id="${cardId}"]`);
+              if (!card || card.dataset.status === column.dataset.status) return;
+              const previousStatus = card.dataset.status;
+              const response = await fetch(card.dataset.statusUrl, {
+                method: "POST", credentials: "same-origin",
+                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "X-CSRFToken": csrfToken, "X-Requested-With": "XMLHttpRequest" },
+                body: new URLSearchParams({ status: column.dataset.status }),
+              });
+              if (!response.ok) return;
+              const result = await response.json();
+              card.dataset.status = result.status;
+              card.querySelector("h3").classList.toggle("activity-done", result.status === "DONE");
+              const moveForms = card.querySelectorAll(".task-card-actions form");
+              let fallbackForm = null;
+              moveForms.forEach((form) => {
+                if (form.querySelector('[name="status"]').value === result.status) {
+                  fallbackForm = form.cloneNode(true);
+                  form.remove();
+                }
+              });
+              if (fallbackForm) {
+                fallbackForm.querySelector('[name="status"]').value = previousStatus;
+                const labels = { NOT_STARTED: "Not started", IN_PROGRESS: "In progress", DONE: "Done" };
+                fallbackForm.querySelector("button").textContent = `Move to ${labels[previousStatus]}`;
+                card.querySelector(".task-card-actions").appendChild(fallbackForm);
+              }
+              column.querySelector(".board-cards").appendChild(card);
+              draggedCard = null;
+            });
+          });
+        })();
+      </script>
+    {% endif %}
+  {% endif %}
+</main>
+{% endblock %}

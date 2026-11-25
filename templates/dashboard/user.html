@@ -131,6 +131,25 @@
   </section>
 
   <section class="panel">
+    <div class="budget-head">
+      <div><h2>Tasks</h2><p class="muted">{{ pending_task_count }} pending · <span class="{% if overdue_task_count %}over-budget{% else %}muted{% endif %}">{{ overdue_task_count }} overdue</span></p></div>
+      <a class="button-link" href="{% url 'tasks:home' %}">Open Task Tracker</a>
+    </div>
+    {% if upcoming_tasks %}
+      {% for task in upcoming_tasks %}
+        <div class="budget-head" style="padding:.65rem 0;border-bottom:1px solid #dfe9e2">
+          <strong>{{ task.course }} · {{ task.title }}</strong>
+          <span>{{ task.due_date|date:"M j, Y, g:i A" }}</span>
+        </div>
+      {% endfor %}
+    {% elif pending_task_count %}
+      <p class="muted">No upcoming deadlines. <a href="{% url 'tasks:home' %}">Review your tasks</a>.</p>
+    {% else %}
+      <p class="muted">No pending tasks. <a href="{% url 'tasks:home' %}">Add one</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
     <h2>More tools coming soon</h2>
     <div class="future-grid">
       <article class="future-card"><strong>Savings goals</strong><p class="muted">Plan and track what you are saving toward.</p></article>
