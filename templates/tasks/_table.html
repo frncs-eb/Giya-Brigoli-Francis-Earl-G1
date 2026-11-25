@@ -1,0 +1,17 @@
+<div class="task-table-wrap">
+  <table class="task-table">
+    <thead><tr><th>Course</th><th>Activity</th><th>Status</th><th>Deadline</th><th>Priority</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for task in rows %}
+        <tr>
+          <td><span class="task-course" style="--course-hue:{{ task.course_hue }}">{{ task.course }}</span></td>
+          <td class="{% if task.status == 'DONE' %}activity-done{% endif %}"><strong>{{ task.title }}</strong>{% if task.description %}<br><span class="muted">{{ task.description|truncatechars:90 }}</span>{% endif %}</td>
+          <td><form method="post" action="{% url 'tasks:set_status' task.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ current_url }}"><select class="status-select status-{{ task.status|lower|cut:'_' }}" name="status" aria-label="Status for {{ task.title }}" onchange="this.form.submit()">{% for value,label in statuses %}<option value="{{ value }}"{% if task.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></form></td>
+          <td class="{% if task.status == 'DONE' %}deadline-done{% elif task.is_overdue %}deadline-overdue{% elif task.is_due_soon %}deadline-soon{% endif %}">{{ task.due_date|date:"M j, Y, g:i A" }}</td>
+          <td><span class="priority priority-{{ task.priority|lower }}"><i class="priority-dot"></i>{{ task.get_priority_display }}</span></td>
+          <td><div class="task-actions"><a href="{% url 'tasks:edit' task.pk %}?next={{ current_url|urlencode }}">Edit</a><a href="{% url 'tasks:delete_confirm' task.pk %}?next={{ current_url|urlencode }}">Delete</a></div></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
