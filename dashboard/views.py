@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
 from django.utils import timezone
@@ -11,6 +11,7 @@ from django.utils import timezone
 from budget.models import BudgetAllowance, Expense
 from clinical.models import ClinicalLog
 from schedule.models import ClassSchedule
+from tasks.models import Task
 
 
 def allowance_spending(queryset):
@@ -93,6 +94,13 @@ def home(request):
             occurrence += timedelta(days=7)
         upcoming_classes.append({'class_item': class_item, 'date': occurrence})
     upcoming_classes.sort(key=lambda item: (item['date'], item['class_item'].start_time))
+    task_now = timezone.now()
+    pending_tasks = Task.objects.filter(user=user).exclude(status=Task.Status.DONE)
+    task_counts = pending_tasks.aggregate(
+        pending=Count('pk'),
+        overdue=Count('pk', filter=Q(due_date__lt=task_now)),
+    )
+    upcoming_tasks = pending_tasks.filter(due_date__gte=task_now).order_by('due_date')[:5]
     recent_clinical_logs = ClinicalLog.objects.filter(user=user).order_by(
         '-duty_date', '-duty_time',
     )[:3]
@@ -105,4 +113,7 @@ def home(request):
         'recent_expenses': recent_expenses,
         'upcoming_classes': upcoming_classes[:3],
         'recent_clinical_logs': recent_clinical_logs,
+        'pending_task_count': task_counts['pending'],
+        'overdue_task_count': task_counts['overdue'],
+        'upcoming_tasks': upcoming_tasks,
     })

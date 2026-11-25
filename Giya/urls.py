@@ -22,6 +22,7 @@ urlpatterns = [
     path('schedule/', include('schedule.urls')),
     path('budget/', include('budget.urls')),
     path('clinical/', include('clinical.urls')),
+    path('tasks/', include('tasks.urls')),
     path('', include('accounts.urls')),
     path('', include('dashboard.urls')),
 ]
