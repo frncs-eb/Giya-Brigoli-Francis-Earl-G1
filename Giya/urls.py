@@ -23,6 +23,7 @@ urlpatterns = [
     path('budget/', include('budget.urls')),
     path('clinical/', include('clinical.urls')),
     path('tasks/', include('tasks.urls')),
+    path('notifications/', include('notifications.urls')),
     path('', include('accounts.urls')),
     path('', include('dashboard.urls')),
 ]

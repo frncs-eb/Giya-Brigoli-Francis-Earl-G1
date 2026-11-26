@@ -104,6 +104,8 @@ def home(request):
     recent_clinical_logs = ClinicalLog.objects.filter(user=user).order_by(
         '-duty_date', '-duty_time',
     )[:3]
+    from notifications.models import Notification
+    user_notifications = Notification.objects.filter(user=user)
     return render(request, 'dashboard/user.html', {
         'budget_summary': budget_summary,
         'today': today,
@@ -116,4 +118,6 @@ def home(request):
         'pending_task_count': task_counts['pending'],
         'overdue_task_count': task_counts['overdue'],
         'upcoming_tasks': upcoming_tasks,
+        'dashboard_notifications': user_notifications.order_by('-created_at')[:5],
+        'unread_notification_count': user_notifications.filter(is_read=False).count(),
     })
