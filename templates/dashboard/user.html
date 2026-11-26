@@ -15,6 +15,8 @@
     </div>
   </section>
 
+  <section class="panel"><div class="budget-head"><h2>Reminders <span class="muted">({{ unread_notification_count }} unread)</span></h2><a href="{% url 'notifications:list' %}">View all</a></div>{% for n in dashboard_notifications %}<p><a href="{% url 'notifications:open' n.pk %}">{{ n.title }}</a> <span class="muted">{{ n.created_at|timesince }} ago</span></p>{% empty %}<p class="muted">You're all caught up</p>{% endfor %}</section>
+
   <section class="panel">
     <div class="budget-head">
       <div>
@@ -42,9 +44,7 @@
         {% if budget_summary %}
           <p>Remaining<span class="insight-value">{{ budget_summary.allowance.remaining|money }}</span></p>
           <p>Spent {{ budget_summary.allowance.spent_total|money }} of {{ budget_summary.allowance.amount|money }}</p>
-          <div class="progress{% if budget_summary.allowance.remaining < 0 %} over{% endif %}" role="progressbar" aria-label="Active budget used" aria-valuenow="{{ budget_summary.progress_percent|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-            <span style="width: {{ budget_summary.progress_percent }}%"></span>
-          </div>
+          <progress class="progress{% if budget_summary.allowance.remaining < 0 %} over{% endif %}" aria-label="Active budget used" value="{{ budget_summary.progress_percent }}" max="100"></progress>
           {% if budget_summary.allowance.remaining < 0 %}<p class="over-budget">Over budget</p>{% endif %}
         {% else %}
           <p>No active allowance</p>
@@ -62,9 +62,7 @@
           <strong>{{ category.category__name }}</strong>
           <span>{{ category.total|money }} · {{ category.percent|floatformat:1 }}%</span>
         </div>
-        <div class="progress" role="progressbar" aria-label="{{ category.category__name }} share of monthly spending" aria-valuenow="{{ category.percent|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-          <span style="width: {{ category.percent }}%"></span>
-        </div>
+        <progress class="progress" aria-label="{{ category.category__name }} share of monthly spending" value="{{ category.percent }}" max="100"></progress>
       </div>
     {% empty %}
       <p class="muted">Your category breakdown will appear after you record expenses this month.</p>

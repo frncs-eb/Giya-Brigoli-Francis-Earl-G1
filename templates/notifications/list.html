@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Notifications | Giya{% endblock %}
+{% block content %}
+<main><section class="panel">
+  <div class="budget-head"><h1>Notifications</h1><a href="{% url 'notifications:preferences' %}">Preferences</a></div>
+  <form method="get" class="filter-form"><label>Category<select name="category"><option value="">All</option>{% for value,label in categories %}<option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label><input type="checkbox" name="unread" value="1" {% if unread %}checked{% endif %}> Unread only</label><button>Filter</button></form>
+  <form method="post" action="{% url 'notifications:clear_read' %}" class="inline-form">{% csrf_token %}<button type="submit">Clear read</button></form>
+  {% for n in page_obj %}<article class="notification-row {{ n.level|lower }}"><div class="budget-head"><div><strong>{{ n.title }}</strong> <span class="muted">{{ n.get_category_display }} · {{ n.created_at|timesince }} ago</span><p>{{ n.message }}</p></div><div class="actions"><a href="{% url 'notifications:open' n.pk %}">Open</a><form method="post" action="{% url 'notifications:mark_read' n.pk %}">{% csrf_token %}<button type="submit">Mark {% if n.is_read %}unread{% else %}read{% endif %}</button></form><form method="post" action="{% url 'notifications:delete' n.pk %}">{% csrf_token %}<button type="submit">Delete</button></form></div></div></article>
+  {% empty %}<p class="placeholder">You're all caught up</p>{% endfor %}
+  <nav aria-label="Pagination">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&category={{ category }}{% if unread %}&unread=1{% endif %}">Previous</a>{% endif %} <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span> {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&category={{ category }}{% if unread %}&unread=1{% endif %}">Next</a>{% endif %}</nav>
+</section></main>
+<style>.notification-row{padding:1rem;border-bottom:1px solid #dfe9e2}.notification-row.warning{border-left:4px solid #d69e2e}.notification-row.danger{border-left:4px solid #c53030}.notification-row p{margin:.4rem 0}</style>
+{% endblock %}
