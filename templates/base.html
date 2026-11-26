@@ -67,6 +67,7 @@
     .category-row .progress { margin-top: .4rem; }
     .future-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
     .future-card { padding: 1rem; border: 1px dashed #b9c9bf; border-radius: 8px; }
+    .notification-menu{position:relative}.notification-toggle{padding:.45rem;background:transparent;color:#176b4a;font-size:1.15rem}.notification-badge{background:#c53030;color:#fff;border-radius:999px;padding:.1rem .4rem;font-size:.75rem}.notification-dropdown{display:none;position:absolute;z-index:15;right:0;top:100%;width:min(350px,90vw);padding:.75rem;background:#fff;border:1px solid #dfe9e2;border-radius:8px;box-shadow:0 8px 24px #18332b22}.notification-dropdown.open{display:block}.notification-entry{display:block;padding:.6rem;border-bottom:1px solid #dfe9e2;text-decoration:none}.notification-entry.warning{border-left:4px solid #d69e2e}.notification-entry.danger{border-left:4px solid #c53030}.notification-toast{display:none;position:fixed;right:1rem;bottom:1rem;z-index:25;background:#18332b;color:white;padding:1rem;border-radius:8px}
     @media (max-width: 560px) { .profile-fields { grid-template-columns: 1fr; } }
     @media (max-width: 480px) { header { align-items: flex-start; gap: 1rem; } nav { flex-wrap: wrap; justify-content: flex-end; } .card { padding: 1.4rem; } }
   </style>
@@ -80,6 +81,7 @@
         <a href="{% url 'budget:home' %}">Budget</a>
         <a href="{% url 'clinical:home' %}">Clinical Log</a>
         <a href="{% url 'tasks:home' %}">Tasks</a>
+        <div class="notification-menu"><button type="button" class="notification-toggle" aria-label="Notifications" aria-expanded="false">♧ <span class="notification-badge" {% if not unread_count %}hidden{% endif %}>{{ unread_count }}</span></button><div class="notification-dropdown">{% for n in latest_notifications %}<a class="notification-entry {{ n.level|lower }}" href="{% url 'notifications:open' n.pk %}"><strong>{{ n.title }}</strong><br><small>{{ n.get_category_display }} · {{ n.created_at|timesince }} ago</small></a>{% empty %}<p class="muted">You're all caught up</p>{% endfor %}<form method="post" action="{% url 'notifications:mark_all_read' %}">{% csrf_token %}<button type="submit">Mark all as read</button></form><a href="{% url 'notifications:list' %}">View all</a></div></div>
         <a href="{% url 'accounts:profile' %}">Profile</a>
         {% if user.is_staff %}
           <a href="{% url 'admin:auth_user_changelist' %}">Manage Users</a>
@@ -95,6 +97,10 @@
       {% endif %}
     </nav>
   </header>
+  <div class="notification-toast" role="status" aria-live="polite"></div>
+  {% if user.is_authenticated %}<script>
+  (()=>{const b=document.querySelector('.notification-toggle'),menu=document.querySelector('.notification-dropdown'),badge=document.querySelector('.notification-badge'),toast=document.querySelector('.notification-toast');if(!b)return;b.addEventListener('click',()=>{menu.classList.toggle('open');b.setAttribute('aria-expanded',menu.classList.contains('open'))});let count=Number(badge.textContent)||0;setInterval(async()=>{try{const r=await fetch("{% url 'notifications:poll' %}",{headers:{'X-Requested-With':'XMLHttpRequest'}});const d=await r.json();badge.textContent=d.unread;badge.hidden=d.unread===0;if(d.unread>count&&d.latest.length){toast.textContent=d.latest[0].title;toast.style.display='block';setTimeout(()=>toast.style.display='none',5000)}count=d.unread}catch(e){}},60000)})();
+  </script>{% endif %}
   {% if messages %}
     <ul class="messages" aria-live="polite">
       {% for message in messages %}<li>{{ message }}</li>{% endfor %}
