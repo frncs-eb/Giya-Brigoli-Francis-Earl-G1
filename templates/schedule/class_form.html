@@ -1,3 +1,46 @@
 {% extends 'base.html' %}
 {% block title %}{% if is_edit %}Edit class{% else %}New class{% endif %} | Giya{% endblock %}
-{% block content %}<main><section class="card"><h1>{% if is_edit %}Edit class{% else %}New class{% endif %}</h1><form method="post">{% csrf_token %}<input type="hidden" name="fallback" value="1"><input type="hidden" name="view" value="{{ view }}"><input type="hidden" name="date" value="{{ current|date:'Y-m-d' }}">{% for field in form %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}{% endfor %}<button class="submit" type="submit">Save class</button></form><p><a href="{% url 'schedule:calendar' %}?view={{ view }}&amp;date={{ current|date:'Y-m-d' }}">Back to calendar</a></p>{% if is_edit %}<form method="post" action="{% url 'schedule:class_delete' object.pk %}" onsubmit="return confirm('Delete this class from your schedule?')">{% csrf_token %}<input type="hidden" name="view" value="{{ view }}"><input type="hidden" name="date" value="{{ current|date:'Y-m-d' }}"><button type="submit" style="background:#a32626">Delete class</button></form>{% endif %}</section></main>{% endblock %}
+{% block content %}
+<style>
+  body:has(.schedule-shell){background:#f4f6fb;color:#282d38}body:has(.schedule-shell)>header{display:none}
+  .schedule-shell{min-height:100vh;display:grid;grid-template-columns:218px minmax(0,1fr)}
+  .schedule-sidebar{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:1.7rem;padding:1.4rem .9rem 1rem;background:rgba(255,255,255,.96);border-right:1px solid #e9edf4}
+  .schedule-brand{display:flex;align-items:center;gap:.65rem;padding:.15rem .55rem;color:#292e39;font-size:1.08rem;font-weight:750;text-decoration:none;letter-spacing:-.03em}
+  .schedule-brand-mark{display:grid;width:31px;height:31px;place-items:center;border-radius:10px;background:#eaf0ff;color:#2864e8}
+  .schedule-group-title{margin:0 0 .45rem .65rem;color:#9aa1ad;font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .schedule-nav{display:grid;gap:.18rem}.schedule-nav a{display:flex;align-items:center;gap:.7rem;padding:.62rem .7rem;border-radius:8px;color:#606977;font-size:.85rem;text-decoration:none}
+  .schedule-nav a:hover{background:#f4f6fa;color:#343b49}.schedule-nav a.active{background:#2864e8;color:#fff;box-shadow:0 4px 10px #2864e833}.schedule-nav-icon{width:18px;text-align:center}
+  .schedule-mobile-nav{display:none}.schedule-side-bottom{margin-top:auto}.schedule-side-bottom button{width:100%;padding:.65rem .7rem;background:#fff7f6;color:#c34747;font-size:.85rem;text-align:left}
+  .schedule-content{min-width:0}.schedule-topbar{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:1rem;min-height:62px;padding:.65rem clamp(1rem,3vw,2.2rem);background:rgba(255,255,255,.92);border-bottom:1px solid #e9edf4;backdrop-filter:blur(14px)}
+  .schedule-search{display:flex;align-items:center;gap:.5rem;width:min(330px,45vw);padding:.55rem .75rem;border:1px solid #eff1f5;border-radius:8px;background:#f5f6f8;color:#87909d}.schedule-search input{min-width:0;width:100%;padding:0;border:0;outline:0;background:transparent;color:#343b49;font-size:.82rem}.schedule-search input:focus{box-shadow:none}
+  .schedule-top-spacer{flex:1}.schedule-top-icon{display:grid;width:34px;height:34px;place-items:center;border:1px solid #e9edf4;border-radius:50%;background:#fff;color:#586171;text-decoration:none}
+  .schedule-user{display:flex;align-items:center;gap:.55rem;color:#292e39;font-size:.78rem;font-weight:650}.schedule-avatar{display:grid;width:32px;height:32px;place-items:center;border-radius:50%;background:linear-gradient(135deg,#d6e4ff,#f7dce8);color:#3656a2;font-weight:750}
+  .schedule-mobile-logout{display:none;padding:.45rem .62rem;background:#fff7f6;color:#c34747;font-size:.73rem}
+  .schedule-main{width:min(100% - 2.4rem,900px);margin:1.5rem auto 3rem}.schedule-form-card{padding:1.6rem;background:rgba(255,255,255,.95);border:1px solid #e9edf4;border-radius:14px;box-shadow:0 6px 22px #3442630c}
+  .schedule-form-card h1{margin-top:0;color:#292e39;font-size:1.6rem;letter-spacing:-.04em}.schedule-form-card label{display:block;margin:1rem 0 .4rem;color:#4d5665;font-size:.85rem;font-weight:650}
+  .schedule-form-card input,.schedule-form-card select{width:100%;padding:.72rem .8rem;border:1px solid #dce2ec;border-radius:8px;background:#fff;color:#303644;font:inherit}.schedule-form-card input:focus,.schedule-form-card select:focus{outline:2px solid #2864e833;border-color:#6a91e9}
+  .schedule-form-card ul.errorlist{color:#bd414a;font-size:.8rem}.schedule-form-card .submit{width:auto;margin-top:1.2rem;padding:.7rem 1rem;border-radius:8px;background:#2864e8;color:#fff}.schedule-form-card a{color:#315fbd;font-size:.84rem}
+  .schedule-form-card .delete-class{margin-top:1rem;background:#c44750;color:#fff}
+  @media(max-width:980px){.schedule-shell{grid-template-columns:180px minmax(0,1fr)}}
+  @media(max-width:720px){.schedule-shell{grid-template-columns:1fr}.schedule-sidebar{position:static;height:auto;display:grid;grid-template-columns:1fr auto;gap:.5rem;padding:.7rem .8rem;border-right:0;border-bottom:1px solid #e9edf4}.schedule-brand{padding:.1rem .3rem}.schedule-sidebar>.schedule-nav-wrap{display:none}.schedule-sidebar>.schedule-mobile-nav{display:block;grid-column:1/-1;overflow-x:auto}.schedule-mobile-nav .schedule-nav{display:flex;width:max-content}.schedule-mobile-nav .schedule-nav a{white-space:nowrap}.schedule-side-bottom{display:none}.schedule-mobile-logout{display:block}.schedule-topbar{position:static}.schedule-main{width:calc(100% - 1.2rem);margin-top:.8rem}}
+  @media(max-width:520px){.schedule-search{width:min(230px,48vw)}.schedule-user span:last-child{display:none}}
+</style>
+<div class="schedule-shell">
+  <aside class="schedule-sidebar" aria-label="Schedule navigation">
+    <a class="schedule-brand" href="{% url 'dashboard:home' %}"><span class="schedule-brand-mark">G</span> Giya</a>
+    <div class="schedule-nav-wrap"><p class="schedule-group-title">Workspace</p><nav class="schedule-nav"><a href="{% url 'dashboard:home' %}"><span class="schedule-nav-icon">▦</span> Overview</a><a class="active" href="{% url 'schedule:calendar' %}"><span class="schedule-nav-icon">▣</span> Schedule</a><a href="{% url 'tasks:home' %}"><span class="schedule-nav-icon">✓</span> Tasks</a><a href="{% url 'clinical:home' %}"><span class="schedule-nav-icon">＋</span> Clinical log</a></nav></div>
+    <div class="schedule-nav-wrap"><p class="schedule-group-title">Personal</p><nav class="schedule-nav"><a href="{% url 'budget:home' %}"><span class="schedule-nav-icon">◉</span> Budget</a><a href="{% url 'notifications:list' %}"><span class="schedule-nav-icon">♧</span> Notifications</a><a href="{% url 'accounts:profile' %}"><span class="schedule-nav-icon">○</span> Profile</a></nav></div>
+    <div class="schedule-mobile-nav"><nav class="schedule-nav" aria-label="Mobile navigation"><a href="{% url 'dashboard:home' %}">▦ Overview</a><a class="active" href="{% url 'schedule:calendar' %}">▣ Schedule</a><a href="{% url 'tasks:home' %}">✓ Tasks</a><a href="{% url 'clinical:home' %}">＋ Clinical</a><a href="{% url 'budget:home' %}">◉ Budget</a><a href="{% url 'notifications:list' %}">♧ Inbox</a></nav></div>
+    <div class="schedule-side-bottom"><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">↪ &nbsp; Log out</button></form></div>
+  </aside>
+  <div class="schedule-content">
+    <div class="schedule-topbar"><div class="schedule-search"><span aria-hidden="true">▣</span><span>Schedule</span></div><span class="schedule-top-spacer"></span><a class="schedule-top-icon" href="{% url 'notifications:list' %}" aria-label="Notifications">♧</a><div class="schedule-user"><span class="schedule-avatar">{% firstof user.first_name|first user.username|first %}</span><span>{% firstof user.get_full_name user.username %}</span></div><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="schedule-mobile-logout" type="submit">Log out</button></form></div>
+    <main class="schedule-main"><section class="schedule-form-card">
+      <h1>{% if is_edit %}Edit class{% else %}New class{% endif %}</h1>
+      <form method="post">{% csrf_token %}<input type="hidden" name="fallback" value="1"><input type="hidden" name="view" value="{{ view }}"><input type="hidden" name="date" value="{{ current|date:'Y-m-d' }}">{% for field in form %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}{% endfor %}<button class="submit" type="submit">Save class</button></form>
+      <p><a href="{% url 'schedule:calendar' %}?view={{ view }}&amp;date={{ current|date:'Y-m-d' }}">← Back to calendar</a></p>
+      {% if is_edit %}<form method="post" action="{% url 'schedule:class_delete' object.pk %}" onsubmit="return confirm('Delete this class from your schedule?')">{% csrf_token %}<input type="hidden" name="view" value="{{ view }}"><input type="hidden" name="date" value="{{ current|date:'Y-m-d' }}"><button class="delete-class" type="submit">Delete class</button></form>{% endif %}
+    </section></main>
+  </div>
+</div>
+{% endblock %}
