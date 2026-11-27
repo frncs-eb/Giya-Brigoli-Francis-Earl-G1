@@ -4,156 +4,228 @@
 {% block title %}Dashboard | Giya{% endblock %}
 
 {% block content %}
-<main>
-  <section class="card wide">
-    <h1>Welcome, {% firstof user.get_full_name user.username %}!</h1>
-    <div class="profile-fields">
-      <p><strong>Name</strong><br>{% firstof user.get_full_name user.username %}</p>
-      <p><strong>Role</strong><br>User</p>
-      <p><strong>Email</strong><br>{% if user.email %}{{ user.email }}{% else %}<span class="muted">Not provided</span>{% endif %}</p>
-      <p><strong>Date joined</strong><br>{{ user.date_joined|date:"M j, Y" }}</p>
+<style>
+  body:has(.dashboard-shell) { background:#f4f6fb; color:#282d38; }
+  body:has(.dashboard-shell) > header { display:none; }
+  .dashboard-shell { --ink:#292e39; --muted:#7b8392; --line:#e9edf4; --blue:#2864e8; min-height:100vh; display:grid; grid-template-columns:218px minmax(0,1fr); }
+  .dash-sidebar { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:1.7rem; padding:1.4rem .9rem 1rem; background:rgba(255,255,255,.94); border-right:1px solid #e9edf4; }
+  .dash-brand { display:flex; align-items:center; gap:.65rem; padding:.15rem .55rem; color:var(--ink); font-size:1.08rem; font-weight:750; text-decoration:none; letter-spacing:-.03em; }
+  .brand-mark { display:grid; width:31px; height:31px; place-items:center; border-radius:10px; background:#eaf0ff; color:#2864e8; }
+  .side-group-title { margin:0 0 .45rem .65rem; color:#9aa1ad; font-size:.67rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+  .side-nav { display:grid; gap:.18rem; }
+  .side-nav-wrap.mobile-nav { display:none; }
+  .side-nav a { display:flex; align-items:center; gap:.7rem; padding:.62rem .7rem; border-radius:8px; color:#606977; font-size:.85rem; text-decoration:none; }
+  .side-nav a:hover { background:#f4f6fa; color:#343b49; }
+  .side-nav a.active { background:#2864e8; color:#fff; box-shadow:0 4px 10px #2864e833; }
+  .side-icon { width:18px; text-align:center; font-size:1rem; }
+  .side-bottom { margin-top:auto; }
+  .side-bottom button { width:100%; padding:.65rem .7rem; background:#fff7f6; color:#c34747; font-size:.85rem; text-align:left; }
+  .side-bottom button:hover { background:#ffebe8; }
+  .dashboard-content { min-width:0; }
+  .dash-topbar { position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:1rem; min-height:62px; padding:.65rem clamp(1rem,3vw,2.2rem); background:rgba(255,255,255,.9); border-bottom:1px solid var(--line); backdrop-filter:blur(14px); }
+  .dash-search { width:min(330px,45vw); display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:#f5f6f8; border:1px solid #eff1f5; border-radius:8px; color:#87909d; }
+  .dash-search input { min-width:0; padding:0; border:0; outline:0; background:transparent; color:#343b49; font-size:.82rem; }
+  .dash-search input:focus { box-shadow:none; }
+  .topbar-spacer { flex:1; }
+  .top-icon { position:relative; display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--line); border-radius:50%; background:#fff; color:#586171; text-decoration:none; }
+  .top-icon .notification-badge { position:absolute; top:-5px; right:-5px; min-width:17px; padding:.08rem .25rem; background:#e45050; font-size:.65rem; }
+  .dash-user { display:flex; align-items:center; gap:.55rem; color:var(--ink); font-size:.78rem; font-weight:650; }
+  .top-logout { display:none; padding:.45rem .62rem; background:#fff7f6; color:#c34747; font-size:.73rem; }
+  .avatar { display:grid; width:32px; height:32px; place-items:center; border-radius:50%; background:linear-gradient(135deg,#d6e4ff,#f7dce8); color:#3656a2; font-weight:750; }
+  .dashboard-page { width:min(100% - 2.4rem, 1230px); margin:1.35rem auto 3rem; }
+  .welcome-banner { position:relative; min-height:218px; overflow:hidden; display:grid; place-items:center; padding:2rem; border-radius:15px; background:linear-gradient(110deg,#3575d8 0%,#6eabe9 46%,#a8c8f2 100%); color:#fff; text-align:center; box-shadow:0 10px 25px #447cc526; }
+  .welcome-banner:before, .welcome-banner:after { content:""; position:absolute; pointer-events:none; background:rgba(255,255,255,.28); filter:blur(2px); }
+  .welcome-banner:before { width:280px; height:75px; top:24px; left:-30px; border-radius:50%; box-shadow:90px 12px 0 4px rgba(255,255,255,.18), 690px 7px 0 6px rgba(255,255,255,.2), 780px 16px 0 -2px rgba(255,255,255,.16); }
+  .welcome-banner:after { width:440px; height:105px; right:-80px; bottom:-65px; border-radius:50%; background:rgba(226,239,255,.22); }
+  .banner-plane { position:absolute; right:8%; bottom:18px; width:min(45%,440px); opacity:.28; color:#fff; }
+  .banner-copy { position:relative; z-index:1; max-width:590px; text-shadow:0 1px 8px #244e8b55; }
+  .banner-copy h1 { margin:.45rem 0; color:#fff; font-size:clamp(1.65rem,3.4vw,2.45rem); letter-spacing:-.04em; }
+  .banner-copy p { margin:.25rem 0; color:#eff6ff; font-size:.9rem; }
+  .banner-date { display:inline-block; padding:.32rem .65rem; border:1px solid #ffffff66; border-radius:999px; background:#ffffff1c; color:#fff; font-size:.72rem; }
+  .action-dock { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:.6rem; width:min(760px,calc(100% - 2rem)); margin:-24px auto 1.55rem; padding:.75rem; border:1px solid #edf0f5; border-radius:12px; background:#fff; box-shadow:0 8px 25px #34426316; }
+  .action-dock .dock-label { margin:0 auto 0 .3rem; color:#737c8a; font-size:.77rem; font-weight:650; }
+  .action-dock a { display:inline-flex; align-items:center; gap:.4rem; padding:.58rem .82rem; border:1px solid #e8ebf1; border-radius:8px; color:#465061; font-size:.77rem; text-decoration:none; }
+  .action-dock a:hover { border-color:#c8d6f5; background:#f6f8ff; }
+  .action-dock a.primary { border-color:var(--blue); background:var(--blue); color:#fff; }
+  .dash-section { margin:1.2rem 0; padding:1.15rem; border:1px solid #edf0f5; border-radius:13px; background:rgba(255,255,255,.94); box-shadow:0 4px 16px #34426308; }
+  .section-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.85rem; }
+  .section-head h2 { margin:0; color:#303644; font-size:.98rem; letter-spacing:-.02em; }
+  .section-head p { margin:.25rem 0 0; color:var(--muted); font-size:.75rem; }
+  .section-head > a { color:#647084; font-size:.73rem; text-decoration:none; }
+  .section-head > a:hover { color:var(--blue); }
+  .metric-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; }
+  .metric-card { min-width:0; padding:.9rem 1rem; border:1px solid #edf0f5; border-radius:10px; background:linear-gradient(145deg,#fff,#fbfcff); }
+  .metric-label { color:#89919f; font-size:.66rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+  .metric-number { display:block; margin:.32rem 0 .15rem; color:#303644; font-size:1.45rem; font-weight:750; letter-spacing:-.04em; }
+  .metric-note { color:#8b93a0; font-size:.7rem; }
+  .workspace-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; }
+  .workspace-card { min-height:105px; padding:.85rem; border:1px solid #edf0f5; border-radius:10px; color:#333a48; text-decoration:none; background:linear-gradient(145deg,#fff,#f8faff); }
+  .workspace-card:hover { transform:translateY(-2px); border-color:#d8e2f8; box-shadow:0 7px 16px #3442630c; }
+  .workspace-icon { display:grid; width:30px; height:30px; place-items:center; margin-bottom:.55rem; border-radius:9px; background:#eaf1ff; color:#356add; }
+  .workspace-card:nth-child(2) .workspace-icon { background:#edf8f3; color:#32926a; }
+  .workspace-card:nth-child(3) .workspace-icon { background:#fff4e8; color:#c67a27; }
+  .workspace-card:nth-child(4) .workspace-icon { background:#f5edff; color:#8252c7; }
+  .workspace-card strong { display:block; font-size:.8rem; }
+  .workspace-card small { display:block; margin-top:.2rem; color:#87909e; font-size:.68rem; }
+  .content-columns { display:grid; grid-template-columns:1.15fr .85fr; gap:1rem; }
+  .content-columns .dash-section { min-width:0; margin:.2rem 0; }
+  .dash-list { display:grid; }
+  .dash-list-row { display:flex; align-items:center; justify-content:space-between; gap:.8rem; padding:.68rem .15rem; border-top:1px solid #f0f2f6; }
+  .dash-list-row:first-child { border-top:0; }
+  .dash-list-row strong { color:#414958; font-size:.78rem; font-weight:650; }
+  .dash-list-row span, .dash-list-row time { color:#818a98; font-size:.71rem; text-align:right; }
+  .dash-empty { padding:.85rem .15rem; color:#858d9b; font-size:.76rem; }
+  .dash-table-wrap { overflow-x:auto; }
+  .dashboard-page table { min-width:540px; }
+  .dashboard-page th, .dashboard-page td { padding:.65rem .55rem; border-color:#edf0f5; }
+  .dashboard-page th { color:#8b93a0; font-size:.65rem; letter-spacing:.06em; text-transform:uppercase; }
+  .dashboard-page td { color:#505968; font-size:.73rem; }
+  .dashboard-page a { color:#386bd0; }
+  .dash-progress { height:7px; overflow:hidden; border-radius:99px; background:#edf1f8; }
+  .dash-progress span { display:block; height:100%; border-radius:99px; background:#4d7fe2; }
+  .dash-progress.over span { background:#d76570; }
+  .dashboard-page .over-budget { color:#c44750; }
+  .budget-card-copy { color:#727b8a; font-size:.73rem; }
+  .dashboard-page .muted { color:#858d9b; }
+  .dashboard-page .button-link { display:inline-block; padding:.52rem .8rem; border-radius:7px; background:#2864e8; color:#fff; font-size:.72rem; text-decoration:none; }
+  .dashboard-page .button-link:hover { background:#1e54cb; }
+  @media(max-width:980px) { .dashboard-shell { grid-template-columns:180px minmax(0,1fr); } .workspace-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media(max-width:720px) { .dashboard-shell { grid-template-columns:1fr; } .dash-sidebar { position:static; height:auto; padding:.7rem .8rem; border-right:0; border-bottom:1px solid #e9edf4; } .dash-brand { padding:.1rem .3rem; } .dash-sidebar > .side-nav-wrap { display:none; } .dash-sidebar > .side-nav-wrap.mobile-nav { display:block; } .dash-sidebar { display:grid; grid-template-columns:1fr auto; gap:.5rem; } .dash-sidebar .side-nav-wrap.mobile-nav { grid-column:1/-1; } .dash-sidebar .side-nav-wrap.mobile-nav .side-nav { display:flex; overflow-x:auto; } .dash-sidebar .side-nav-wrap.mobile-nav .side-nav a { flex:0 0 auto; } .dash-sidebar .side-bottom { display:none; } .top-logout { display:block; } .dash-topbar { position:static; } .content-columns { grid-template-columns:1fr; } }
+  @media(max-width:520px) { .dash-user span:last-child { display:none; } .dashboard-page { width:calc(100% - 1.2rem); margin-top:.8rem; } .welcome-banner { min-height:190px; padding:1.2rem; } .banner-plane { right:-3%; width:66%; } .metric-grid { grid-template-columns:1fr; } .action-dock { width:calc(100% - 1rem); margin-top:-17px; justify-content:flex-start; } .action-dock .dock-label { width:100%; } .workspace-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .dash-search { width:min(230px,55vw); } }
+</style>
+
+<div class="dashboard-shell">
+  <aside class="dash-sidebar" aria-label="Dashboard navigation">
+    <a class="dash-brand" href="{% url 'dashboard:home' %}"><span class="brand-mark">G</span> Giya</a>
+    <div class="side-nav-wrap">
+      <p class="side-group-title">Workspace</p>
+      <nav class="side-nav">
+        <a class="active" href="{% url 'dashboard:home' %}"><span class="side-icon">▦</span> Overview</a>
+        <a href="{% url 'schedule:calendar' %}"><span class="side-icon">▣</span> Schedule</a>
+        <a href="{% url 'tasks:home' %}"><span class="side-icon">✓</span> Tasks</a>
+        <a href="{% url 'clinical:home' %}"><span class="side-icon">＋</span> Clinical log</a>
+      </nav>
     </div>
-  </section>
+    <div class="side-nav-wrap">
+      <p class="side-group-title">Personal</p>
+      <nav class="side-nav">
+        <a href="{% url 'budget:home' %}"><span class="side-icon">◉</span> Budget</a>
+        <a href="{% url 'notifications:list' %}"><span class="side-icon">♧</span> Notifications{% if unread_notification_count %}<span class="notification-badge">{{ unread_notification_count }}</span>{% endif %}</a>
+        <a href="{% url 'accounts:profile' %}"><span class="side-icon">○</span> Profile</a>
+      </nav>
+    </div>
+    <div class="side-nav-wrap mobile-nav">
+      <nav class="side-nav" aria-label="Mobile navigation">
+        <a class="active" href="{% url 'dashboard:home' %}">▦ Overview</a>
+        <a href="{% url 'schedule:calendar' %}">▣ Schedule</a>
+        <a href="{% url 'tasks:home' %}">✓ Tasks</a>
+        <a href="{% url 'clinical:home' %}">＋ Clinical</a>
+        <a href="{% url 'budget:home' %}">◉ Budget</a>
+        <a href="{% url 'notifications:list' %}">♧ Inbox</a>
+      </nav>
+    </div>
+    <div class="side-bottom">
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">↪ &nbsp; Log out</button></form>
+    </div>
+  </aside>
 
-  <section class="panel"><div class="budget-head"><h2>Reminders <span class="muted">({{ unread_notification_count }} unread)</span></h2><a href="{% url 'notifications:list' %}">View all</a></div>{% for n in dashboard_notifications %}<p><a href="{% url 'notifications:open' n.pk %}">{{ n.title }}</a> <span class="muted">{{ n.created_at|timesince }} ago</span></p>{% empty %}<p class="muted">You're all caught up</p>{% endfor %}</section>
-
-  <section class="panel">
-    <div class="budget-head">
-      <div>
-        <h2>Your spending overview</h2>
-        <p class="muted">{{ today|date:"l, F j, Y" }}</p>
-      </div>
-      <a class="button-link" href="{% url 'budget:home' %}">Open Budget Tracker</a>
+  <div class="dashboard-content">
+    <div class="dash-topbar">
+      <label class="dash-search"><span aria-hidden="true">⌕</span><input type="search" id="dashboard-search" placeholder="Search your dashboard..." aria-label="Search dashboard"></label>
+      <span class="topbar-spacer"></span>
+      <a class="top-icon" href="{% url 'notifications:list' %}" aria-label="Notifications">♧{% if unread_notification_count %}<span class="notification-badge">{{ unread_notification_count }}</span>{% endif %}</a>
+      <div class="dash-user"><span class="avatar">{% firstof user.first_name|first user.username|first %}</span><span>{% firstof user.get_full_name user.username %}</span></div>
+      <form method="post" action="{% url 'accounts:logout' %}" class="top-logout-form">{% csrf_token %}<button class="top-logout" type="submit">Log out</button></form>
     </div>
 
-    <div class="insight-grid">
-      <article class="insight-card">
-        <h3>Spent today</h3>
-        <span class="insight-value">{{ today_spent|money }}</span>
-      </article>
-      <article class="insight-card">
-        <h3>This month</h3>
-        <span class="insight-value">{{ month_spent|money }}</span>
-        <span class="muted">Month to date</span>
-      </article>
-      <article class="insight-card">
-        <div class="budget-head">
-          <h3>Active budget</h3>
-          <a href="{% url 'budget:home' %}">View</a>
+    <main class="dashboard-page">
+      <section class="welcome-banner">
+        <svg class="banner-plane" viewBox="0 0 600 180" fill="none" aria-hidden="true"><path d="M23 100 245 79 288 17q7-10 16 0l22 58 210-19q25-2 37 11l-216 43 49 37-7 9-84-28-183 30q-19 3-28-8l151-46-232 8Z" fill="currentColor"/><path d="m230 111 75 12 15 28-12 4-44-22-34 5Z" fill="currentColor" opacity=".65"/></svg>
+        <div class="banner-copy">
+          <span class="banner-date">{{ today|date:"l, F j" }}</span>
+          <h1>Make today count, {% firstof user.first_name user.username %}</h1>
+          <p>Your day, deadlines, and spending are all in one place.</p>
         </div>
-        {% if budget_summary %}
-          <p>Remaining<span class="insight-value">{{ budget_summary.allowance.remaining|money }}</span></p>
-          <p>Spent {{ budget_summary.allowance.spent_total|money }} of {{ budget_summary.allowance.amount|money }}</p>
-          <progress class="progress{% if budget_summary.allowance.remaining < 0 %} over{% endif %}" aria-label="Active budget used" value="{{ budget_summary.progress_percent }}" max="100"></progress>
-          {% if budget_summary.allowance.remaining < 0 %}<p class="over-budget">Over budget</p>{% endif %}
-        {% else %}
-          <p>No active allowance</p>
-          <a href="{% url 'budget:allowance_create' %}">Create an allowance</a>
-        {% endif %}
-      </article>
-    </div>
-  </section>
+      </section>
 
-  <section class="panel">
-    <h2>Where your money goes</h2>
-    {% for category in category_spending %}
-      <div class="category-row">
-        <div class="budget-head">
-          <strong>{{ category.category__name }}</strong>
-          <span>{{ category.total|money }} · {{ category.percent|floatformat:1 }}%</span>
+      <nav class="action-dock" aria-label="Quick actions">
+        <span class="dock-label">What would you like to do?</span>
+        <a class="primary" href="{% url 'tasks:create' %}">＋ New task</a>
+        <a href="{% url 'schedule:class_create' %}">▣ Add class</a>
+        <a href="{% url 'budget:expense_create' %}">＋ Record expense</a>
+        <a href="{% url 'clinical:home' %}">＋ Clinical entry</a>
+      </nav>
+
+      <section class="dash-section searchable-block">
+        <div class="section-head"><div><h2>Your overview</h2><p>A quick snapshot of your finances today</p></div><a href="{% url 'budget:home' %}">Open budget →</a></div>
+        <div class="metric-grid">
+          <article class="metric-card"><span class="metric-label">Spent today</span><strong class="metric-number">{{ today_spent|money }}</strong><span class="metric-note">{{ today|date:"M j, Y" }}</span></article>
+          <article class="metric-card"><span class="metric-label">Spent this month</span><strong class="metric-number">{{ month_spent|money }}</strong><span class="metric-note">Month to date</span></article>
+          <article class="metric-card"><span class="metric-label">Budget remaining</span>{% if budget_summary %}<strong class="metric-number">{{ budget_summary.allowance.remaining|money }}</strong><div class="dash-progress{% if budget_summary.allowance.remaining < 0 %} over{% endif %}"><span style="width:{{ budget_summary.progress_percent }}%"></span></div><span class="metric-note">{{ budget_summary.allowance.spent_total|money }} of {{ budget_summary.allowance.amount|money }} used</span>{% else %}<strong class="metric-number">—</strong><a class="metric-note" href="{% url 'budget:allowance_create' %}">Set up an allowance</a>{% endif %}</article>
         </div>
-        <progress class="progress" aria-label="{{ category.category__name }} share of monthly spending" value="{{ category.percent }}" max="100"></progress>
-      </div>
-    {% empty %}
-      <p class="muted">Your category breakdown will appear after you record expenses this month.</p>
-    {% endfor %}
-    <p class="muted">Category totals are based on expenses recorded this month to date.</p>
-  </section>
+      </section>
 
-  <section class="panel">
-    <div class="budget-head">
-      <h2>Recent expenses</h2>
-      <a href="{% url 'budget:home' %}">View all budgets</a>
-    </div>
-    <div style="overflow-x: auto">
-      <table>
-        <thead><tr><th>Date</th><th>Item</th><th>Category</th><th>Amount</th><th>Budget</th></tr></thead>
-        <tbody>
-          {% for expense in recent_expenses %}
-            <tr>
-              <td>{{ expense.expense_date|date:"M j, Y" }}</td>
-              <td>{{ expense.item_name }}</td>
-              <td>{{ expense.category.name }}</td>
-              <td>{{ expense.amount|money }}</td>
-              <td><a href="{% url 'budget:allowance_detail' expense.allowance_id %}">{{ expense.allowance.get_period_type_display }}</a></td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="5">No expenses recorded yet. <a href="{% url 'budget:home' %}">Add expenses in your budget</a>.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="budget-head">
-      <div>
-        <h2>Upcoming classes</h2>
-        <p class="muted">A quick look at your next schedule items</p>
-      </div>
-      <a class="button-link" href="{% url 'schedule:calendar' %}">Open Schedule</a>
-    </div>
-    {% for entry in upcoming_classes %}
-      <div class="budget-head" style="padding:.65rem 0;border-bottom:1px solid #dfe9e2">
-        <strong>{{ entry.class_item.subject_name }}</strong>
-        <span>{{ entry.date|date:"D, M j" }} · {{ entry.class_item.start_time|time:"g:i A" }}{% if entry.class_item.room %} · {{ entry.class_item.room }}{% endif %}</span>
-      </div>
-    {% empty %}
-      <p class="muted">No classes yet. <a href="{% url 'schedule:calendar' %}">Add one to your schedule</a>.</p>
-    {% endfor %}
-  </section>
-
-  <section class="panel">
-    <div class="budget-head">
-      <h2>Clinical Log</h2>
-      <a class="button-link" href="{% url 'clinical:home' %}">Open Clinical Log</a>
-    </div>
-    {% for log in recent_clinical_logs %}
-      <div class="budget-head" style="padding:.65rem 0;border-bottom:1px solid #dfe9e2">
-        <strong>{{ log.hospital }} · {{ log.get_area_display }} · {{ log.case_type }}</strong>
-        <span>{{ log.duty_date|date:"D, M j" }} · {{ log.duty_time|time:"g:i A" }}</span>
-      </div>
-    {% empty %}
-      <p class="muted">No clinical cases logged yet. <a href="{% url 'clinical:home' %}">Add one</a>.</p>
-    {% endfor %}
-  </section>
-
-  <section class="panel">
-    <div class="budget-head">
-      <div><h2>Tasks</h2><p class="muted">{{ pending_task_count }} pending · <span class="{% if overdue_task_count %}over-budget{% else %}muted{% endif %}">{{ overdue_task_count }} overdue</span></p></div>
-      <a class="button-link" href="{% url 'tasks:home' %}">Open Task Tracker</a>
-    </div>
-    {% if upcoming_tasks %}
-      {% for task in upcoming_tasks %}
-        <div class="budget-head" style="padding:.65rem 0;border-bottom:1px solid #dfe9e2">
-          <strong>{{ task.course }} · {{ task.title }}</strong>
-          <span>{{ task.due_date|date:"M j, Y, g:i A" }}</span>
+      <section class="dash-section searchable-block">
+        <div class="section-head"><div><h2>Your Giya workspace</h2><p>Jump back into the tools you use most</p></div></div>
+        <div class="workspace-grid">
+          <a class="workspace-card" href="{% url 'schedule:calendar' %}"><span class="workspace-icon">▣</span><strong>Class schedule</strong><small>View your upcoming classes</small></a>
+          <a class="workspace-card" href="{% url 'tasks:home' %}"><span class="workspace-icon">✓</span><strong>Task tracker</strong><small>{{ pending_task_count }} pending · {{ overdue_task_count }} overdue</small></a>
+          <a class="workspace-card" href="{% url 'budget:home' %}"><span class="workspace-icon">◉</span><strong>Budget tracker</strong><small>Keep spending on track</small></a>
+          <a class="workspace-card" href="{% url 'clinical:home' %}"><span class="workspace-icon">＋</span><strong>Clinical log</strong><small>Review your recent cases</small></a>
         </div>
-      {% endfor %}
-    {% elif pending_task_count %}
-      <p class="muted">No upcoming deadlines. <a href="{% url 'tasks:home' %}">Review your tasks</a>.</p>
-    {% else %}
-      <p class="muted">No pending tasks. <a href="{% url 'tasks:home' %}">Add one</a>.</p>
-    {% endif %}
-  </section>
+      </section>
 
-  <section class="panel">
-    <h2>More tools coming soon</h2>
-    <div class="future-grid">
-      <article class="future-card"><strong>Savings goals</strong><p class="muted">Plan and track what you are saving toward.</p></article>
-      <article class="future-card"><strong>Spending reports</strong><p class="muted">Explore your trends over time.</p></article>
-      <article class="future-card"><strong>Recurring bills</strong><p class="muted">Keep upcoming regular expenses in one place.</p></article>
-    </div>
-  </section>
-</main>
+      <div class="content-columns">
+        <section class="dash-section searchable-block">
+          <div class="section-head"><div><h2>Upcoming classes</h2><p>Your next scheduled sessions</p></div><a href="{% url 'schedule:calendar' %}">See schedule →</a></div>
+          <div class="dash-list">
+            {% for entry in upcoming_classes %}<div class="dash-list-row"><strong>{{ entry.class_item.subject_name }}{% if entry.class_item.room %} <span>· {{ entry.class_item.room }}</span>{% endif %}</strong><time>{{ entry.date|date:"D, M j" }} · {{ entry.class_item.start_time|time:"g:i A" }}</time></div>{% empty %}<div class="dash-empty">No classes scheduled yet. <a href="{% url 'schedule:class_create' %}">Add a class</a>.</div>{% endfor %}
+          </div>
+        </section>
+        <section class="dash-section searchable-block">
+          <div class="section-head"><div><h2>Tasks & deadlines</h2><p>{{ pending_task_count }} pending · <span class="{% if overdue_task_count %}over-budget{% endif %}">{{ overdue_task_count }} overdue</span></p></div><a href="{% url 'tasks:home' %}">See tasks →</a></div>
+          <div class="dash-list">
+            {% for task in upcoming_tasks %}<div class="dash-list-row"><strong>{{ task.course }} · {{ task.title }}</strong><time>{{ task.due_date|date:"M j, g:i A" }}</time></div>{% empty %}<div class="dash-empty">No upcoming deadlines. <a href="{% url 'tasks:create' %}">Add a task</a>.</div>{% endfor %}
+          </div>
+        </section>
+      </div>
+
+      <div class="content-columns">
+        <section class="dash-section searchable-block">
+          <div class="section-head"><div><h2>Recent expenses</h2><p>Your latest budget activity</p></div><a href="{% url 'budget:home' %}">View all →</a></div>
+          <div class="dash-table-wrap"><table><thead><tr><th>Item</th><th>Category</th><th>Date</th><th>Amount</th></tr></thead><tbody>
+          {% for expense in recent_expenses %}<tr><td>{{ expense.item_name }}</td><td>{{ expense.category.name }}</td><td>{{ expense.expense_date|date:"M j" }}</td><td>{{ expense.amount|money }}</td></tr>{% empty %}<tr><td colspan="4">No expenses recorded yet.</td></tr>{% endfor %}
+          </tbody></table></div>
+        </section>
+        <section class="dash-section searchable-block">
+          <div class="section-head"><div><h2>Spending by category</h2><p>Month to date</p></div><a href="{% url 'budget:home' %}">Budget →</a></div>
+          {% for category in category_spending %}<div class="dash-list-row" style="display:block"><div class="budget-head"><strong>{{ category.category__name }}</strong><span>{{ category.total|money }} · {{ category.percent|floatformat:1 }}%</span></div><div class="dash-progress"><span style="width:{{ category.percent }}%"></span></div></div>{% empty %}<div class="dash-empty">Your category breakdown will appear after you record expenses this month.</div>{% endfor %}
+        </section>
+      </div>
+
+      <div class="content-columns">
+        <section class="dash-section searchable-block">
+          <div class="section-head"><div><h2>Clinical log</h2><p>Your latest case entries</p></div><a href="{% url 'clinical:home' %}">Open log →</a></div>
+          <div class="dash-list">{% for log in recent_clinical_logs %}<div class="dash-list-row"><strong>{{ log.hospital }} · {{ log.get_area_display }} · {{ log.case_type }}</strong><time>{{ log.duty_date|date:"M j" }} · {{ log.duty_time|time:"g:i A" }}</time></div>{% empty %}<div class="dash-empty">No clinical cases logged yet.</div>{% endfor %}</div>
+        </section>
+        <section class="dash-section searchable-block">
+          <div class="section-head"><div><h2>Notifications</h2><p>{{ unread_notification_count }} unread</p></div><a href="{% url 'notifications:list' %}">View inbox →</a></div>
+          <div class="dash-list">{% for n in dashboard_notifications %}<a class="dash-list-row" href="{% url 'notifications:open' n.pk %}" style="text-decoration:none"><strong>{{ n.title }}</strong><time>{{ n.created_at|timesince }} ago</time></a>{% empty %}<div class="dash-empty">You're all caught up.</div>{% endfor %}</div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const search = document.getElementById('dashboard-search');
+    const blocks = document.querySelectorAll('.searchable-block');
+    if (!search) return;
+    search.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      blocks.forEach(block => { block.hidden = query && !block.textContent.toLowerCase().includes(query); });
+    });
+  })();
+</script>
 {% endblock %}
